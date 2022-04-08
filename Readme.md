@@ -1,5 +1,7 @@
 # SolanaBeachAPI
 
+This code is Generated via OpenAPIGenerator.
+
 
 ## Development
 
