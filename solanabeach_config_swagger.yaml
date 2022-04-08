@@ -1,0 +1,2978 @@
+---
+openapi: 3.0.1
+info:
+  title: Solanabeach Backend API
+  description: "Solanabeach Backend REST API documentation.\n\n## Rate limiting\nCurrent API rate limit per IP is 100 requests per second.\n  \n## Pagination\nMost of the endpoints returning array data support pagination. The API uses two types of pagination, depending on the returned data. Some endpoints support both, some are limited to just one type.\n  \n## Supported pagination types\n### Offset / limit\nOffset / limit pagination is the simplest form of pagination supported by the API. Offset parameter represents the number of results to skip before returning the data, and the limit parameter limits the number of returned results. \n\nTo prevent overloading the API, all limit params have a max value. Each API endpoint has its own max value.\n\n### Cursor\nCursor pagination is more complex than the offset / limit one, but, it comes naturally for some blockchain data (such as blocks, transactions, token transfers, etc). Cursors contain data like blocknumber, transaction index, ... and they're described on their respective API endpoints. Limit parameter works exactly the same way as it does in the offset / limit pagination.\n\n## Authentication\nThe public API uses a Bearer OAuth authentication method, and the API key should be provided in the `Authorization` header in each request. API keys are issued on request.\n"
+  contact:
+    email: andrej@vgng.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.0.1
+servers:
+- url: https://api.solanabeach.io/v1
+security:
+- apiAuth: []
+tags:
+- name: Block
+  description: Block data
+- name: Transaction
+  description: Transaction data
+- name: Account
+  description: Account data
+- name: Validator
+  description: Validator data
+- name: Token
+  description: Token data
+- name: Market
+  description: Market data
+- name: TokenSwap
+  description: Token swap data
+- name: Inflation
+  description: Inflation data
+- name: Other
+  description: Other
+paths:
+  /block-hash/{hash}:
+    get:
+      tags:
+      - Block
+      summary: Fetch block by block hash
+      description: Fetch block by block hash if the given block exists
+      operationId: fetchBlockByBlockHash
+      parameters:
+      - name: hash
+        in: path
+        description: Block hash
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Block found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+        "404":
+          description: Block not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /block/{number}:
+    get:
+      tags:
+      - Block
+      summary: Fetch block by block number
+      description: Fetch block by block number if the given block exists
+      operationId: fetchBlockByBlockNumber
+      parameters:
+      - name: number
+        in: path
+        description: Block number
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Block found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+        "404":
+          description: Block not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /latest-blocks:
+    get:
+      tags:
+      - Block
+      summary: Fetch 50 latest blocks
+      description: Fetch 50 latest blocks ordered by block number
+      operationId: fetchLatestBlocks
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Block cursor (blocknumber)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>
+      responses:
+        "200":
+          description: Latest blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Block'
+  /top-programs:
+    get:
+      tags:
+      - Block
+      summary: Fetch top program stats for last 1000 blocks
+      description: Fetch top program stats for last 1000 blocks
+      operationId: fetchTopPrograms
+      responses:
+        "200":
+          description: Top programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200'
+  /transaction/{hash}:
+    get:
+      tags:
+      - Transaction
+      summary: Fetch transaction by transaction hash
+      description: Fetch transaction by transaction hash if the given transaction exists
+      operationId: fetchTransactionByHash
+      parameters:
+      - name: hash
+        in: path
+        description: Transaction hash
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        "404":
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /transaction-hashes/{address}:
+    get:
+      tags:
+      - Transaction
+      summary: Fetch latest transaction hashes
+      description: Fetch latest transaction hashes for the provided address
+      operationId: fetchTransactionHashesByAddress
+      parameters:
+      - name: address
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Transaction cursor (blocknumber,index)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Transaction hashes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200_1'
+  /transactions/{address}:
+    get:
+      tags:
+      - Transaction
+      summary: Fetch latest transactions
+      description: Fetch latest transactions for the provided address
+      operationId: fetchTransactionsByAddress
+      parameters:
+      - name: address
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Transaction cursor (blocknumber,index)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+  /latest-transactions:
+    get:
+      tags:
+      - Transaction
+      summary: Fetch 50 latest transactions
+      description: Fetch 50 latest transactions
+      operationId: fetchLatestTransactions
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Transaction cursor (blocknumber,index)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+  /block-transactions/{number}:
+    get:
+      tags:
+      - Transaction
+      summary: Fetch latest transactions in a block
+      description: Fetch latest transactions in the block with provided block number
+      operationId: fetchTransactionsByBlockNumber
+      parameters:
+      - name: number
+        in: path
+        description: Block number
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Transaction cursor (index)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <txindex>
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+  /validator/{votepubkey}:
+    get:
+      tags:
+      - Validator
+      summary: Fetch validator by vote pubkey
+      description: Fetch validator by vote pubkey if the given transaction exists
+      operationId: fetchValidatorByVotepubkey
+      parameters:
+      - name: votepubkey
+        in: path
+        description: Validator pubkey
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Validator found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validator'
+        "404":
+          description: Validator not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /validator/{votepubkey}/history:
+    get:
+      tags:
+      - Validator
+      summary: Fetch validator history
+      description: Fetch validator's stake and delegator history
+      operationId: fetchValidatorHistory
+      parameters:
+      - name: votepubkey
+        in: path
+        description: Validator's vote pubkey
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Validator history found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_3'
+        "404":
+          description: Validator history not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /validator/{nodepubkey}/slots:
+    get:
+      tags:
+      - Validator
+      summary: Fetch validator slots
+      description: Fetch validator slots in the current epoch
+      operationId: fetchValidatorSlots
+      parameters:
+      - name: nodepubkey
+        in: path
+        description: Validator's node pubkey
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Validator slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200_4'
+  /validator/{votepubkey}/delegators:
+    get:
+      tags:
+      - Validator
+      summary: Fetch validator delegators
+      description: Fetch validator deleagators
+      operationId: fetchValidatorDelegators
+      parameters:
+      - name: votepubkey
+        in: path
+        description: Validator's vote pubkey
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 1000)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Validator delegators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StakeAccount'
+  /markets:
+    get:
+      tags:
+      - Market
+      summary: Fetch markets
+      description: Fetch markets
+      operationId: fetchMarkets
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: sort
+        in: query
+        description: Sort by param
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - name
+          - price
+          - volume
+          - liquidity
+      - name: dir
+        in: query
+        description: Sort direction param
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      responses:
+        "200":
+          description: Markets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_5'
+  /markets/base/{basemint}:
+    get:
+      tags:
+      - Market
+      summary: Fetch markets by base mint
+      description: Fetch markets by base mint
+      operationId: fetchMarketsByBaseMint
+      parameters:
+      - name: basemint
+        in: path
+        description: Base mint address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Markets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Market'
+  /markets/quote/{quotemint}:
+    get:
+      tags:
+      - Market
+      summary: Fetch markets by quote mint
+      description: Fetch markets by quote mint
+      operationId: fetchMarketsByQuoteMint
+      parameters:
+      - name: quotemint
+        in: path
+        description: Quote mint address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Markets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Market'
+  /market/{pubkey}:
+    get:
+      tags:
+      - Market
+      summary: Fetch market
+      description: Fetch market by pubkey
+      operationId: fetchMarket
+      parameters:
+      - name: pubkey
+        in: path
+        description: Market address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Market found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+        "404":
+          description: Market not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /token-swaps:
+    get:
+      tags:
+      - TokenSwap
+      summary: Fetch token swaps
+      description: Fetch token swaps
+      operationId: fetchTokenSwaps
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: sort
+        in: query
+        description: Sort by param
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - name
+          - price
+          - volume
+          - liquidity
+      - name: dir
+        in: query
+        description: Sort direction param
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      responses:
+        "200":
+          description: Token swaps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_6'
+  /token-swaps/{mint}:
+    get:
+      tags:
+      - TokenSwap
+      summary: Fetch token swaps by mint
+      description: Fetch token swaps by mint
+      operationId: fetchTokenSwapsByMint
+      parameters:
+      - name: mint
+        in: path
+        description: Mint address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Token swaps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenSwap'
+  /token-swap/{pubkey}:
+    get:
+      tags:
+      - TokenSwap
+      summary: Fetch token swap
+      description: Fetch token swap by pubkey
+      operationId: fetchTokenSwap
+      parameters:
+      - name: pubkey
+        in: path
+        description: Token swap address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Token swap found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenSwap'
+        "404":
+          description: Token swap not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /inflation:
+    get:
+      tags:
+      - Inflation
+      summary: Fetch inflation
+      description: Fetch inflation info
+      operationId: fetchInflationInfo
+      responses:
+        "200":
+          description: Inflation info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_7'
+  /supply:
+    get:
+      tags:
+      - Inflation
+      summary: Fetch supply
+      description: Fetch Solana supply info provided by the RPC.
+      operationId: fetchSupplyInfo
+      responses:
+        "200":
+          description: Supply info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_8'
+  /stake-history:
+    get:
+      tags:
+      - Other
+      summary: Fetch stake history
+      description: Fetch stake history by epochs
+      operationId: fetchStakeHistory
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 512)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Stake history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200_9'
+  /health:
+    get:
+      tags:
+      - Other
+      summary: Fetch performance info
+      description: Fetch performance info
+      operationId: fetchHealth
+      responses:
+        "200":
+          description: Performance info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_10'
+  /network-status:
+    get:
+      tags:
+      - Other
+      summary: Fetch network status
+      description: Fetch network status
+      operationId: fetchNetworkStatus
+      responses:
+        "200":
+          description: Network status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+  /staking-apy:
+    get:
+      tags:
+      - Other
+      summary: Fetch staking APY
+      description: Fetch staking APY
+      operationId: fetchStakingAPY
+      responses:
+        "200":
+          description: Staking APY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_12'
+  /epoch-history:
+    get:
+      tags:
+      - Other
+      summary: Fetch epoch history
+      description: Fetch epoch history
+      operationId: fetchEpochHistory
+      responses:
+        "200":
+          description: Epoch history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_13'
+  /alias:
+    get:
+      tags:
+      - Other
+      summary: Fetch alias
+      description: Fetch alias data. Aliases represent an address to metadata mapping that includes human readable address names and token metadata (such as ticker, website, ...). It includes all tokens from the official Solana token list, most of the known programs and DEX markets.
+      operationId: fetchAlias
+      responses:
+        "200":
+          description: Alias
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_14'
+  /non-validators:
+    get:
+      tags:
+      - Other
+      summary: Fetch non validator nodes
+      description: Fetch non validator nodes
+      operationId: fetchNonValidators
+      responses:
+        "200":
+          description: Non validators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200_15'
+  /cluster-time:
+    get:
+      tags:
+      - Other
+      summary: Fetch current cluster time
+      description: Fetch current cluster time
+      operationId: fetchClusterTime
+      responses:
+        "200":
+          description: Cluster time
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: timestamp
+  /market-chart-data:
+    get:
+      tags:
+      - Other
+      summary: Fetch market chart data
+      description: Fetch market chart data
+      operationId: fetchMarketChardData
+      responses:
+        "200":
+          description: Chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200_16'
+  /tokens:
+    get:
+      tags:
+      - Token
+      summary: Fetch tokens
+      description: Fetch tokens ordered by holders
+      operationId: fetchTokens
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: sort
+        in: query
+        description: Sort by param
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - name
+          - price
+          - volume
+          - change
+          - marketcap
+          - holders
+          - swapVolume
+          - swapPrice
+          - marketVolume
+          - marketPrice
+      - name: dir
+        in: query
+        description: Sort direction param
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      responses:
+        "200":
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_17'
+  /token/{mint}/holders:
+    get:
+      tags:
+      - Token
+      summary: Fetch token holders
+      description: Fetch token holders ordered by amount. Please note that this endpoint only returns appropriate holders for known tokens (the ones in the official Solana token list).
+      operationId: fetchTokenHolders
+      parameters:
+      - name: mint
+        in: path
+        description: Mint address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Token holders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenHolder'
+  /token/{mint}/transfers:
+    get:
+      tags:
+      - Token
+      summary: Fetch token transfers
+      description: Fetch token transfers ordered by id
+      operationId: fetchTokenTransfers
+      parameters:
+      - name: mint
+        in: path
+        description: Mint address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Token transfers cursor (blocknumber,txindex)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Token transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenTransfer'
+  /token/{pubkey}:
+    get:
+      tags:
+      - Token
+      summary: Fetch single token
+      description: Fetch token by pubkey
+      operationId: fetchToken
+      parameters:
+      - name: pubkey
+        in: path
+        description: Token address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Token found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        "404":
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /token-accounts/{owner}:
+    get:
+      tags:
+      - Token
+      summary: Fetch token accounts owned by owner
+      description: Fetch token accounts owned by owner ordered by amount
+      operationId: fetchTokenAccounts
+      parameters:
+      - name: owner
+        in: path
+        description: Owner address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Token accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenHolder'
+  /token-transfers/{owner}:
+    get:
+      tags:
+      - Token
+      summary: Fetch token transfers by owner
+      description: Fetch token transfers by owner ordered by id
+      operationId: fetchTokenTransfersByOwner
+      parameters:
+      - name: owner
+        in: path
+        description: Owner address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Token transfers cursor (blocknumber,txindex)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Token transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenTransfer'
+  /accounts:
+    get:
+      tags:
+      - Account
+      summary: Fetch accounts
+      description: Fetch accounts ordered by balance
+      operationId: fetchAccounts
+      parameters:
+      - name: limit
+        in: query
+        description: Result limit (max 1000)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SimpleAccount'
+  /wealth:
+    get:
+      tags:
+      - Account
+      summary: Fetch wealth distribution metrics
+      description: Fetch wealth distribution metrics
+      operationId: fetchWealthMetrics
+      responses:
+        "200":
+          description: Accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wealth'
+  /account/{pubkey}/transactions:
+    get:
+      tags:
+      - Account
+      summary: Fetch account transactions
+      description: Fetch account transactions ordered by block number
+      operationId: fetchAccountTransactions
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 1000)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Transaction cursor (blocknumber,txindex)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Account transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+  /account/{pubkey}/stakes:
+    get:
+      tags:
+      - Account
+      summary: Fetch stake accounts
+      description: Fetch stake accounts owned by the pubkey
+      operationId: fetchStakeAccounts
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 1000)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Stake accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StakeAccount'
+  /account/{stake_pubkey}/stake-rewards:
+    get:
+      tags:
+      - Account
+      summary: Fetch stake account rewards
+      description: Fetch stake account rewards by the stake account pubkey
+      operationId: fetchStakeAccountRewards
+      parameters:
+      - name: stake_pubkey
+        in: path
+        description: Stake account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Epoch cursor
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Stake account rewards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StakeAccountReward'
+  /account/{pubkey}/tokens:
+    get:
+      tags:
+      - Account
+      summary: Fetch account tokens
+      description: Fetch account tokens
+      operationId: fetchAccountTokens
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Account tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountToken'
+  /account/{pubkey}/token-transfers:
+    get:
+      tags:
+      - Account
+      summary: Fetch account token transfers
+      description: Fetch account token transfers ordered by block number
+      operationId: fetchAccountTokenTransfers
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Token transfers cursor (blocknumber,txindex)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      - name: inner
+        in: query
+        description: Filter inner instructions
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: boolean
+      responses:
+        "200":
+          description: Account token transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountTokenTransfer'
+  /account/{pubkey}/serum-instructions:
+    get:
+      tags:
+      - Account
+      summary: Fetch account serum instructions
+      description: Fetch account serum instructions ordered by block number
+      operationId: fetchAccountSerumInstructions
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Serum instruction cursor (blocknumber,txindex,index)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>,<instructionindex>
+      responses:
+        "200":
+          description: Account serum instructions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountSerumInstruction'
+  /account/{pubkey}/serum-orders:
+    get:
+      tags:
+      - Account
+      summary: Fetch account serum orders
+      description: Fetch account serum orders ordered by block number
+      operationId: fetchAccountSerumOrders
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Serum orders cursor (blocknumber,txindex)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>
+      responses:
+        "200":
+          description: Account serum orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountSerumOrder'
+  /account/{pubkey}/swap-instructions:
+    get:
+      tags:
+      - Account
+      summary: Fetch account swap instructions
+      description: Fetch account swap instructions ordered by block number
+      operationId: fetchAccountSwapInstructions
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Result limit (max 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: Result offset
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: cursor
+        in: query
+        description: Swap instruction cursor (blocknumber,txindex,index)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: <blocknumber>,<txindex>,<instructionindex>
+      responses:
+        "200":
+          description: Account swap instructions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountSwapInstruction'
+  /account/{pubkey}:
+    get:
+      tags:
+      - Account
+      summary: Fetch account data
+      description: Fetch account data
+      operationId: fetchAccount
+      parameters:
+      - name: pubkey
+        in: path
+        description: Account address
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Account found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    Block:
+      type: object
+      properties:
+        blocknumber:
+          type: integer
+          format: int64
+        blockhash:
+          type: string
+        previousblockhash:
+          type: string
+        parentslot:
+          type: integer
+          format: int64
+        blocktime:
+          $ref: '#/components/schemas/Timestamp'
+        metrics:
+          $ref: '#/components/schemas/Block_metrics'
+        programstats:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block_programstats'
+        rewards:
+          type: object
+        proposer:
+          type: string
+        proposerData:
+          $ref: '#/components/schemas/Block_proposerData'
+        ondemand:
+          type: boolean
+    Transaction:
+      type: object
+      properties:
+        transactionHash:
+          type: string
+        blockNumber:
+          type: integer
+          format: int64
+        index:
+          type: integer
+          format: int64
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction_accounts'
+        header:
+          $ref: '#/components/schemas/Transaction_header'
+        instructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction_instructions'
+        recentBlockhash:
+          type: string
+        signatures:
+          type: array
+          items:
+            type: string
+        meta:
+          $ref: '#/components/schemas/Transaction_meta'
+        valid:
+          type: boolean
+        blocktime:
+          $ref: '#/components/schemas/Timestamp'
+        mostImportantInstruction:
+          $ref: '#/components/schemas/Transaction_mostImportantInstruction'
+        smart:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction_smart'
+        ondemand:
+          type: boolean
+    Market:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        basemint:
+          $ref: '#/components/schemas/Address'
+        quotemint:
+          $ref: '#/components/schemas/Address'
+        meta:
+          $ref: '#/components/schemas/Market_meta'
+    Token:
+      type: object
+      properties:
+        name:
+          type: string
+        ticker:
+          type: string
+        logo:
+          type: string
+        cmcid:
+          type: integer
+        pricedata:
+          $ref: '#/components/schemas/Token_pricedata'
+        pubkey:
+          type: string
+        lamports:
+          type: integer
+          format: int64
+        supply:
+          type: integer
+        decimals:
+          type: integer
+        initialized:
+          type: boolean
+        holders:
+          type: integer
+        meta:
+          $ref: '#/components/schemas/Token_meta'
+        ondemand:
+          type: boolean
+    TokenHolder:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        lamports:
+          type: integer
+          format: int64
+        mint:
+          $ref: '#/components/schemas/Address'
+        owner:
+          $ref: '#/components/schemas/Address'
+        amount:
+          type: integer
+        state:
+          type: integer
+        meta:
+          $ref: '#/components/schemas/TokenHolder_meta'
+    TokenTransfer:
+      type: object
+      properties:
+        id:
+          type: integer
+        blocknumber:
+          type: integer
+        transactionhash:
+          type: string
+        mint:
+          $ref: '#/components/schemas/Address'
+        amount:
+          type: integer
+        source:
+          $ref: '#/components/schemas/Address'
+        destination:
+          $ref: '#/components/schemas/Address'
+        decimals:
+          type: integer
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        valid:
+          type: boolean
+        innerinstruction:
+          type: boolean
+        index:
+          type: integer
+        owner:
+          $ref: '#/components/schemas/Address'
+    TokenSwap:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        name:
+          type: string
+        poolmint:
+          $ref: '#/components/schemas/Address'
+        tokenamint:
+          $ref: '#/components/schemas/Address'
+        tokenbmint:
+          $ref: '#/components/schemas/Address'
+        tokena:
+          $ref: '#/components/schemas/Address'
+        tokenb:
+          $ref: '#/components/schemas/Address'
+        tokenprogram:
+          $ref: '#/components/schemas/Address'
+        meta:
+          $ref: '#/components/schemas/TokenSwap_meta'
+    Account:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          $ref: '#/components/schemas/Account_value'
+    AccountToken:
+      type: object
+      properties:
+        mint:
+          $ref: '#/components/schemas/Address'
+        amount:
+          type: integer
+        address:
+          $ref: '#/components/schemas/Address'
+        decimals:
+          type: integer
+    AccountTokenTransfer:
+      type: object
+      properties:
+        blocknumber:
+          type: integer
+        txhash:
+          type: string
+        mint:
+          $ref: '#/components/schemas/Address'
+        valid:
+          type: boolean
+        amount:
+          type: integer
+        source:
+          $ref: '#/components/schemas/Address'
+        destination:
+          $ref: '#/components/schemas/Address'
+        inner:
+          type: boolean
+        txindex:
+          type: integer
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        decimals:
+          type: integer
+    AccountSerumInstruction:
+      type: object
+      properties:
+        id:
+          type: integer
+        blocknumber:
+          type: integer
+        transactionhash:
+          type: string
+        market:
+          $ref: '#/components/schemas/AccountSerumInstruction_market'
+        owner:
+          $ref: '#/components/schemas/Address'
+        instruction:
+          type: string
+        instructiondata:
+          type: object
+        valid:
+          type: boolean
+        index:
+          type: integer
+        txindex:
+          type: integer
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        ondemand:
+          type: boolean
+    AccountSerumOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        blocknumber:
+          type: integer
+        transactionhash:
+          type: string
+        market:
+          $ref: '#/components/schemas/AccountSerumOrder_market'
+        owner:
+          $ref: '#/components/schemas/Address'
+        openorders:
+          $ref: '#/components/schemas/Address'
+        side:
+          type: string
+        type:
+          type: string
+        pricelimit:
+          type: integer
+        maxquantity:
+          type: integer
+        valid:
+          type: boolean
+        status:
+          type: string
+        processedat:
+          type: integer
+          format: timestamp
+        txindex:
+          type: integer
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        ondemand:
+          type: boolean
+        price:
+          type: number
+          format: float
+        qty:
+          type: number
+          format: float
+    AccountSwapInstruction:
+      type: object
+      properties:
+        id:
+          type: integer
+        blocknumber:
+          type: integer
+        transactionhash:
+          type: string
+        tokenswap:
+          $ref: '#/components/schemas/AccountSwapInstruction_tokenswap'
+        owner:
+          $ref: '#/components/schemas/Address'
+        instruction:
+          type: string
+        instructiondata:
+          type: object
+        valid:
+          type: boolean
+        index:
+          type: integer
+        txindex:
+          type: integer
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        ondemand:
+          type: boolean
+    SimpleAccount:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        balance:
+          type: integer
+    StakeAccount:
+      type: object
+      properties:
+        pubkey:
+          type: string
+        lamports:
+          type: integer
+          format: int64
+        data:
+          $ref: '#/components/schemas/StakeAccount_data'
+    Validator:
+      type: object
+      properties:
+        validator:
+          $ref: '#/components/schemas/Validator_validator'
+        slots:
+          type: array
+          items:
+            type: array
+            items:
+              type: object
+              properties:
+                relativeSlot:
+                  type: integer
+                absoluteSlot:
+                  type: integer
+                confirmedBlock:
+                  type: boolean
+        historic:
+          type: array
+          items:
+            $ref: '#/components/schemas/Validator_historic'
+        latestBlocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Validator_latestBlocks'
+    Wealth:
+      type: object
+      properties:
+        wealth:
+          $ref: '#/components/schemas/Wealth_wealth'
+    Address:
+      type: object
+      properties:
+        address:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+        ticker:
+          type: string
+        cmcId:
+          type: string
+    Amount:
+      type: object
+      properties:
+        amount:
+          type: integer
+        decimals:
+          type: integer
+    StakeAccountReward:
+      type: object
+      properties:
+        epoch:
+          type: integer
+        effectiveSlot:
+          type: integer
+        amount:
+          type: string
+        postBalance:
+          type: string
+        percentChange:
+          type: integer
+        apr:
+          type: integer
+    Timestamp:
+      type: object
+      properties:
+        absolute:
+          type: integer
+        relative:
+          type: integer
+    ApiError:
+      type: object
+      properties:
+        err:
+          type: string
+    inline_response_200:
+      type: object
+      properties:
+        programId:
+          $ref: '#/components/schemas/Address'
+        totalcount:
+          type: integer
+          format: int64
+    inline_response_200_1:
+      type: object
+      properties:
+        txhash:
+          type: string
+        txindex:
+          type: integer
+        blocknumber:
+          type: integer
+        ondemand:
+          type: boolean
+    inline_response_200_2:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    inline_response_200_3:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        validator:
+          type: string
+        stake:
+          type: integer
+          format: int64
+        delegators:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: timestamp
+    validatornodepubkeyslots_slots:
+      type: object
+      properties:
+        relativeSlot:
+          type: integer
+        absoluteSlot:
+          type: integer
+        confirmedBlock:
+          type: boolean
+      example: null
+    inline_response_200_4:
+      type: object
+      properties:
+        validator:
+          type: string
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/validatornodepubkeyslots_slots'
+    inline_response_200_5:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Market'
+    inline_response_200_6:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenSwap'
+    inline_response_200_7:
+      type: object
+      properties:
+        epoch:
+          type: integer
+        foundation:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        validator:
+          type: number
+          format: float
+    inline_response_200_8:
+      type: object
+      properties:
+        total:
+          type: integer
+        circulating:
+          type: integer
+        nonCirculating:
+          type: integer
+    inline_response_200_9:
+      type: object
+      properties:
+        epoch:
+          type: integer
+        effective:
+          type: integer
+        activating:
+          type: integer
+        deactivating:
+          type: integer
+    inline_response_200_10:
+      type: object
+      properties:
+        boundaries:
+          $ref: '#/components/schemas/inline_response_200_10_boundaries'
+        window:
+          type: integer
+        networkLag:
+          type: integer
+        currentSlot:
+          type: integer
+    inline_response_200_11:
+      type: object
+      properties:
+        lastSyncedSlot:
+          type: integer
+        lastNetworkSlot:
+          type: integer
+        networkLag:
+          type: integer
+        lastEpochInfoSync:
+          type: integer
+        laggingBehind:
+          type: integer
+    inline_response_200_12:
+      type: object
+      properties:
+        apy:
+          type: integer
+    inline_response_200_13:
+      type: object
+      properties:
+        epoch:
+          type: integer
+    inline_response_200_14:
+      type: object
+      properties:
+        mintAddress:
+          $ref: '#/components/schemas/inline_response_200_14_mintAddress'
+    nonvalidators_pubkey:
+      type: object
+      properties:
+        address:
+          type: string
+      example: null
+    nonvalidators_location:
+      type: object
+      properties:
+        range:
+          type: array
+          items:
+            type: integer
+        country:
+          type: string
+        region:
+          type: string
+        eu:
+          type: string
+        timezone:
+          type: string
+        city:
+          type: string
+        ll:
+          type: array
+          items:
+            type: integer
+        metro:
+          type: integer
+        area:
+          type: integer
+      example: null
+    nonvalidators_asn:
+      type: object
+      properties:
+        code:
+          type: integer
+        organization:
+          type: string
+      example: null
+    inline_response_200_15:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/nonvalidators_pubkey'
+        featureSet:
+          type: integer
+        gossip:
+          type: string
+        rpc:
+          type: string
+        shredVersion:
+          type: integer
+        tpu:
+          type: string
+        version:
+          type: string
+        location:
+          $ref: '#/components/schemas/nonvalidators_location'
+        asn:
+          $ref: '#/components/schemas/nonvalidators_asn'
+        validator:
+          type: boolean
+    inline_response_200_16:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: timestamp
+        price:
+          type: number
+          format: float
+        volume_24h:
+          type: number
+          format: float
+        market_cap:
+          type: number
+          format: float
+    inline_response_200_17:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+    Block_metrics:
+      type: object
+      properties:
+        txcount:
+          type: integer
+        failedtxs:
+          type: integer
+        totalfees:
+          type: integer
+        instructions:
+          type: integer
+        sucessfultxs:
+          type: integer
+        innerinstructions:
+          type: integer
+      example: null
+    Block_programstats:
+      type: object
+      properties:
+        count:
+          type: integer
+        programId:
+          $ref: '#/components/schemas/Address'
+        instructions:
+          type: object
+      example: null
+    Block_proposerData:
+      type: object
+      properties:
+        name:
+          type: string
+        image:
+          type: string
+        website:
+          type: string
+        nodePubkey:
+          type: string
+      example: null
+    Transaction_accounts:
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/Address'
+        writable:
+          type: boolean
+        signer:
+          type: boolean
+        program:
+          type: boolean
+      example: null
+    Transaction_header:
+      type: object
+      properties:
+        numRequiredSignatures:
+          type: integer
+        numReadonlySignedAccounts:
+          type: integer
+        numReadonlyUnsignedAccounts:
+          type: integer
+      example: null
+    Transaction_raw:
+      type: object
+      properties:
+        data:
+          type: string
+        accounts:
+          type: array
+          items:
+            type: integer
+        programIdIndex:
+          type: integer
+      description: Available if the instruction can't be parsed
+      example: null
+    Transaction_instructions:
+      type: object
+      properties:
+        parsed:
+          type: object
+          description: Depends on the type of instruction
+        raw:
+          $ref: '#/components/schemas/Transaction_raw'
+      example: null
+    Transaction_meta:
+      type: object
+      properties:
+        err:
+          type: object
+        fee:
+          type: integer
+        status:
+          type: object
+        logMessages:
+          type: array
+          items:
+            type: string
+        preBalances:
+          type: array
+          items:
+            type: integer
+            format: in64
+        postBalances:
+          type: array
+          items:
+            type: integer
+            format: in64
+      example: null
+    Transaction_mostImportantInstruction:
+      type: object
+      properties:
+        name:
+          type: string
+        weight:
+          type: number
+          format: float
+        index:
+          type: integer
+      example: null
+    Transaction_smart:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+      example: null
+    Market_meta_orderBooks:
+      type: object
+      properties:
+        asks:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+        bids:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+      example: null
+    Market_meta_liquidity:
+      type: object
+      properties:
+        total:
+          type: number
+          format: float
+        usdBase:
+          type: number
+          format: float
+        usdQuote:
+          type: number
+          format: float
+        base:
+          $ref: '#/components/schemas/Amount'
+        quote:
+          $ref: '#/components/schemas/Amount'
+      example: null
+    Market_meta:
+      type: object
+      properties:
+        asks:
+          $ref: '#/components/schemas/Address'
+        bids:
+          $ref: '#/components/schemas/Address'
+        baseLotSize:
+          type: string
+        quoteLotSize:
+          type: string
+        baseTokenDecimals:
+          type: integer
+        quoteTokenDecimals:
+          type: integer
+        baseVault:
+          $ref: '#/components/schemas/Address'
+        quoteVault:
+          $ref: '#/components/schemas/Address'
+        name:
+          type: string
+        marketPrice:
+          type: number
+          format: float
+        orderBooks:
+          $ref: '#/components/schemas/Market_meta_orderBooks'
+        liquidity:
+          $ref: '#/components/schemas/Market_meta_liquidity'
+        volume:
+          $ref: '#/components/schemas/Market_meta_liquidity'
+        volumes:
+          type: array
+          items:
+            type: number
+            format: float
+        volume24h:
+          type: number
+          format: float
+      example: null
+    Token_pricedata:
+      type: object
+      properties:
+        price:
+          type: number
+          format: float
+        volume_24h:
+          type: number
+          format: float
+        percent_change_1h:
+          type: number
+          format: float
+        last_updated:
+          type: integer
+          format: timestamp
+      example: null
+    Token_meta:
+      type: object
+      properties:
+        freezeAuthority:
+          type: string
+        mintAuthority:
+          type: string
+        url:
+          type: string
+        swapVolume:
+          type: number
+          format: float
+        swapPrice:
+          type: number
+          format: float
+        marketVolume:
+          type: number
+          format: float
+        marketPrice:
+          type: number
+          format: float
+      example: null
+    TokenHolder_meta:
+      type: object
+      properties:
+        delegate:
+          $ref: '#/components/schemas/Address'
+        native:
+          type: boolean
+        delegatedAmount:
+          type: integer
+        closeAuthority:
+          $ref: '#/components/schemas/Address'
+      example: null
+    TokenSwap_meta_liquidity:
+      type: object
+      properties:
+        total:
+          type: number
+          format: float
+        usdTokenA:
+          type: number
+          format: float
+        usdTokenB:
+          type: number
+          format: float
+        nativeTokenA:
+          $ref: '#/components/schemas/Amount'
+        nativeTokenB:
+          $ref: '#/components/schemas/Amount'
+      example: null
+    TokenSwap_meta_prices:
+      type: object
+      properties:
+        AperB:
+          type: number
+          format: float
+        BperA:
+          type: number
+          format: float
+      example: null
+    TokenSwap_meta:
+      type: object
+      properties:
+        supply:
+          $ref: '#/components/schemas/Amount'
+        liquidity:
+          $ref: '#/components/schemas/TokenSwap_meta_liquidity'
+        volume:
+          $ref: '#/components/schemas/TokenSwap_meta_liquidity'
+        prices:
+          $ref: '#/components/schemas/TokenSwap_meta_prices'
+        volumes:
+          type: array
+          items:
+            type: number
+            format: float
+        volume24h:
+          type: number
+          format: float
+      example: null
+    Account_value_base:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        balance:
+          type: integer
+        executable:
+          type: boolean
+        owner:
+          $ref: '#/components/schemas/Address'
+        rentEpoch:
+          type: integer
+        dataSize:
+          type: integer
+      example: null
+    Account_value:
+      type: object
+      properties:
+        base:
+          $ref: '#/components/schemas/Account_value_base'
+        extended:
+          type: object
+          description: Depends on the type of object
+      example: null
+    AccountSerumInstruction_market:
+      type: object
+      properties:
+        name:
+          type: string
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        quoteMint:
+          $ref: '#/components/schemas/Address'
+        baseMint:
+          $ref: '#/components/schemas/Address'
+      example: null
+    AccountSerumOrder_market:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        quoteMint:
+          $ref: '#/components/schemas/Address'
+        baseMint:
+          $ref: '#/components/schemas/Address'
+        currentPrice:
+          type: number
+          format: float
+        baseDecimals:
+          type: integer
+        quoteDecimals:
+          type: integer
+      example: null
+    AccountSwapInstruction_tokenswap_tokenA:
+      type: object
+      properties:
+        mint:
+          $ref: '#/components/schemas/Address'
+        decimals:
+          type: integer
+      example: null
+    AccountSwapInstruction_tokenswap_poolToken:
+      type: object
+      properties:
+        decimals:
+          type: integer
+      example: null
+    AccountSwapInstruction_tokenswap:
+      type: object
+      properties:
+        pubkey:
+          $ref: '#/components/schemas/Address'
+        name:
+          type: string
+        tokenA:
+          $ref: '#/components/schemas/AccountSwapInstruction_tokenswap_tokenA'
+        tokenB:
+          $ref: '#/components/schemas/AccountSwapInstruction_tokenswap_tokenA'
+        poolToken:
+          $ref: '#/components/schemas/AccountSwapInstruction_tokenswap_poolToken'
+      example: null
+    StakeAccount_data_meta_authorized:
+      type: object
+      properties:
+        staker:
+          type: string
+        withdrawer:
+          type: string
+      example: null
+    StakeAccount_data_meta:
+      type: object
+      properties:
+        rent_exempt_reserve:
+          type: integer
+        authorized:
+          $ref: '#/components/schemas/StakeAccount_data_meta_authorized'
+      example: null
+    StakeAccount_data_lockup:
+      type: object
+      properties:
+        unix_timestamp:
+          type: integer
+        epoch:
+          type: integer
+        custodian:
+          type: string
+      example: null
+    StakeAccount_data_stake_delegation:
+      type: object
+      properties:
+        voter_pubkey:
+          type: string
+        stake:
+          type: integer
+        activation_epoch:
+          type: integer
+        deactivation_epoch:
+          type: integer
+        warmup_cooldown_rate:
+          type: integer
+        validatorInfo:
+          $ref: '#/components/schemas/Block_proposerData'
+      example: null
+    StakeAccount_data_stake:
+      type: object
+      properties:
+        delegation:
+          $ref: '#/components/schemas/StakeAccount_data_stake_delegation'
+        credits_observed:
+          type: integer
+      example: null
+    StakeAccount_data:
+      type: object
+      properties:
+        state:
+          type: integer
+        meta:
+          $ref: '#/components/schemas/StakeAccount_data_meta'
+        lockup:
+          $ref: '#/components/schemas/StakeAccount_data_lockup'
+        stake:
+          $ref: '#/components/schemas/StakeAccount_data_stake'
+      example: null
+    Validator_validator_blockProduction:
+      type: object
+      properties:
+        leaderSlots:
+          type: integer
+        skippedSlots:
+          type: integer
+      example: null
+    Validator_validator_asn:
+      type: object
+      properties:
+        code:
+          type: string
+        organization:
+          type: string
+      example: null
+    Validator_validator:
+      type: object
+      properties:
+        activatedStake:
+          type: integer
+        stakePercentage:
+          type: integer
+        commission:
+          type: integer
+        epochCredits:
+          type: array
+          items:
+            type: integer
+        epochVoteAccount:
+          type: boolean
+        lastVote:
+          type: integer
+        nodePubkey:
+          type: string
+        rootSlot:
+          type: integer
+        votePubkey:
+          type: string
+        blockProduction:
+          $ref: '#/components/schemas/Validator_validator_blockProduction'
+        delegatingStakeAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeAccount'
+        delegatorCount:
+          type: integer
+        location:
+          $ref: '#/components/schemas/nonvalidators_location'
+        moniker:
+          type: string
+        website:
+          type: string
+        pictureURL:
+          type: string
+        version:
+          type: string
+        details:
+          type: string
+        asn:
+          $ref: '#/components/schemas/Validator_validator_asn'
+      example: null
+    Validator_historic:
+      type: object
+      properties:
+        stake:
+          type: integer
+        delegators:
+          type: integer
+        timestamp:
+          type: string
+          format: timestamp
+      example: null
+    Validator_metrics:
+      type: object
+      properties:
+        txcount:
+          type: integer
+        failedtxs:
+          type: integer
+        totalfees:
+          type: integer
+        instructions:
+          type: integer
+        sucessfultxs:
+          type: integer
+        innerinstructions:
+          type: integer
+        totalvaluemoved:
+          type: integer
+      example: null
+    Validator_latestBlocks:
+      type: object
+      properties:
+        blocknumber:
+          type: integer
+        blocktime:
+          $ref: '#/components/schemas/Timestamp'
+        metrics:
+          $ref: '#/components/schemas/Validator_metrics'
+        proposer:
+          type: string
+      example: null
+    Wealth_wealth_distribution_0_10:
+      type: object
+      properties:
+        value:
+          type: string
+        percentage:
+          type: string
+        usdValue:
+          type: string
+      example: null
+    Wealth_wealth_distribution_total:
+      type: object
+      properties:
+        system:
+          type: string
+        stake:
+          type: string
+        spl:
+          type: string
+        sum:
+          type: string
+      example: null
+    Wealth_wealth_distribution:
+      type: object
+      properties:
+        "0_10":
+          $ref: '#/components/schemas/Wealth_wealth_distribution_0_10'
+        "11_50":
+          $ref: '#/components/schemas/Wealth_wealth_distribution_0_10'
+        "51_100":
+          $ref: '#/components/schemas/Wealth_wealth_distribution_0_10'
+        rest:
+          $ref: '#/components/schemas/Wealth_wealth_distribution_0_10'
+        total:
+          $ref: '#/components/schemas/Wealth_wealth_distribution_total'
+      example: null
+    Wealth_wealth_span:
+      type: object
+      properties:
+        from:
+          type: integer
+        to:
+          type: integer
+      example: null
+    Wealth_wealth_addresses:
+      type: object
+      properties:
+        count:
+          type: integer
+        percentage:
+          type: string
+      example: null
+    Wealth_wealth_groupedBalances:
+      type: object
+      properties:
+        span:
+          $ref: '#/components/schemas/Wealth_wealth_span'
+        addresses:
+          $ref: '#/components/schemas/Wealth_wealth_addresses'
+        balances:
+          $ref: '#/components/schemas/Wealth_wealth_distribution_0_10'
+      example: null
+    Wealth_wealth:
+      type: object
+      properties:
+        distribution:
+          $ref: '#/components/schemas/Wealth_wealth_distribution'
+        groupedBalances:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wealth_wealth_groupedBalances'
+        price:
+          type: number
+          format: float
+      example: null
+    inline_response_200_10_boundaries:
+      type: object
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+      example: null
+    inline_response_200_14_mintAddress_meta:
+      type: object
+      properties:
+        url:
+          type: string
+      example: null
+    inline_response_200_14_mintAddress:
+      type: object
+      properties:
+        name:
+          type: string
+        ticker:
+          type: string
+        cmcId:
+          type: string
+        coingeckoId:
+          type: string
+        logo:
+          type: string
+        meta:
+          $ref: '#/components/schemas/inline_response_200_14_mintAddress_meta'
+      example: null
+  securitySchemes:
+    apiAuth:
+      type: http
+      scheme: bearer
